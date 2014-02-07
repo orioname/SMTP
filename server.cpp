@@ -1,25 +1,22 @@
 
 #include "server.h"
+#include "clientProcessor.h"
 #include <pthread.h>
 #include<string.h>    
 #include<stdlib.h> 
 
-int processMessage(char client_message[], int len){
-    
-    
-    
-    return 0;
-}
+
 
 void *processClient(void *sockdClient)
 {
     int sock = *(int*)sockdClient;
     char client_message[2050];
     int read_size;
+    CClientProcessor cp(sock);
      
     while((read_size = recv(sock , client_message , sizeof(client_message) , 0)))
     {
-        	if(processMessage(client_message, sizeof(client_message)) == 0)
+        	if(cp.ProcessMessage(client_message, read_size) == -1)
 		{
 			printf("Connection thread closing\n");
                         free(sockdClient);

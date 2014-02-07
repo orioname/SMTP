@@ -4,6 +4,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>clientProcessor.h</itemPath>
       <itemPath>global.h</itemPath>
       <itemPath>server.h</itemPath>
     </logicalFolder>
@@ -14,6 +15,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>clientProcessor.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
       <itemPath>server.cpp</itemPath>
     </logicalFolder>
@@ -45,6 +47,10 @@
           <commandLine>-pthread -Wall</commandLine>
         </ccTool>
       </compileType>
+      <item path="clientProcessor.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="clientProcessor.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="global.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
@@ -74,6 +80,10 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="clientProcessor.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="clientProcessor.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="global.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
