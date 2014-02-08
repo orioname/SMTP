@@ -6,6 +6,8 @@
 
 using namespace std;
 
+//TODO mailbox
+
 int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
     int responseType = 502; // command not implemented
@@ -80,20 +82,24 @@ int CClientProcessor::Response(int type) {
 
 int CClientProcessor::Helo(char* clientMessage, int read_size) {
 
+    //TODO implementation
     return 250;
 }
 
 int CClientProcessor::Mail(char* clientMessage, int read_size) {
 
+    //TODO implementation
     return 502;
 }
 
 int CClientProcessor::Rcpt(char* clientMessage, int read_size) {
 
+    //TODO implementation
     return 502;
 }
 
 int CClientProcessor::Data(char* clientMessage, int read_size) {
 
+    //TODO implementation
     return 502;
 }
