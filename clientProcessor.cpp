@@ -2,17 +2,18 @@
 #include "global.h"
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
+
+using namespace std;
 
 int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
     int responseType = 502; // command not implemented
 
-    char *command;
+    char command[5] = "comm";
 
-    for (int i = 0; i < 4; i++) {
-        command[i] = clientMessage[i];
-    }
-    command[4] = '\n';
+    if (read_size >= 4)
+        strncpy(command, clientMessage, 4);
 
     if (strcasecmp(command, "HELO") == 0) {
 
@@ -50,11 +51,10 @@ int CClientProcessor::Response(int type) {
 
     if (type == 220)
         sprintf(serverMessage, "220 Welcome to electronic mail system \r\n");
-    else if (type == 221){
+    else if (type == 221) {
         strcpy(serverMessage, "221 Service closing transmission channel\r\n");
         return -1;
-    }
-    else if (type == 250)
+    } else if (type == 250)
         strcpy(serverMessage, "250 OK\r\n");
     else if (type == 354)
         strcpy(serverMessage, "354 Start mail input; end with <CRLF>.<CRLF>\r\n");
@@ -74,7 +74,7 @@ int CClientProcessor::Response(int type) {
     write_size = (int) strlen(serverMessage);
 
     write(clientSock, serverMessage, write_size);
-    
+
     return 0;
 }
 
