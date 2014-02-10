@@ -22,9 +22,11 @@ void *processClient(void *sockdClient)
                         free(sockdClient);
 			exit(-1);
 		}
+                //*client_message = 0;
     }
          
-    free(sockdClient);     
+    free(sockdClient);
+    exit(0);
 }
 
 int CServer::acceptCon(){

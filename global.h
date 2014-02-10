@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #define SMTP_PORT 2500
-
+#define MAX_RCPT_COUNT 100
 
 #endif	/* GLOBAL_H */
 

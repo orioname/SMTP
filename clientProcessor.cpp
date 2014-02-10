@@ -2,11 +2,18 @@
 #include "global.h"
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 #include <iostream>
+#include <sys/stat.h>
 
 using namespace std;
 
 //TODO mailbox
+
+CClientProcessor::CClientProcessor(int clientS) {
+    clientSock = clientS;
+    state = STATE_INIT;
+}
 
 int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
@@ -42,7 +49,7 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
         responseType = 221;
 
     }
-
+    
     return Response(responseType);
 }
 
@@ -82,7 +89,12 @@ int CClientProcessor::Response(int type) {
 
 int CClientProcessor::Helo(char* clientMessage, int read_size) {
 
-    //TODO implementation
+    state = STATE_HELO;
+
+    rcptCount = 0;
+
+    NewMessage();
+
     return 250;
 }
 
@@ -94,12 +106,58 @@ int CClientProcessor::Mail(char* clientMessage, int read_size) {
 
 int CClientProcessor::Rcpt(char* clientMessage, int read_size) {
 
-    //TODO implementation
-    return 502;
+    if (state != STATE_HELO)
+        return Response(503);
+    
+    if (rcptCount > MAX_RCPT_COUNT)
+        return Response(552);
+    
+    string toAddress;
+    string toDomain;
+    string toUser;
+    string clientMes = string(clientMessage);
+    
+    size_t pos1 = clientMes.find("<");
+    size_t pos2 = clientMes.find(">");
+           
+    toAddress = clientMes.substr(pos1+1, pos2-2);
+    cout << pos1 << " " << pos2 << " " << toAddress << endl;
+    
+    return 250;
 }
 
 int CClientProcessor::Data(char* clientMessage, int read_size) {
 
     //TODO implementation
     return 502;
+}
+
+bool CClientProcessor::NewMessage() {
+
+    int i = 0;
+
+    struct stat buf;
+    msgFileName = "msg0.txt";
+
+    if (stat(msgFileName.c_str(), &buf) == -1) {
+        msgFile.open(msgFileName.c_str());
+    }
+    else {
+        while (stat(msgFileName.c_str(), &buf) > -1) {
+
+            i++;
+
+            stringstream ss;
+            ss << i;
+
+            msgFileName = string("msg") + ss.str() + ".txt";
+        }
+
+        msgFile.open(msgFileName.c_str());
+    }
+
+    if (msgFile.is_open())
+        return true;
+
+    return false;
 }
