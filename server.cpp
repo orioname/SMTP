@@ -20,13 +20,12 @@ void *processClient(void *sockdClient)
 		{
 			printf("Connection thread closing\n");
                         free(sockdClient);
-			exit(-1);
+			exit(0);
 		}
-                //*client_message = 0;
     }
          
     free(sockdClient);
-    exit(0);
+    exit(-1);
 }
 
 int CServer::acceptCon(){

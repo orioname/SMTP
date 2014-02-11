@@ -26,17 +26,19 @@ private:
     int Data(char *clientMessage, int read_size);
     int state;
     string msgFileName;
-    ofstream msgFile;
+    fstream msgFile;
     int rcptCount;
-    Address AdressFrom;
-    vector<Address> AdressTo; 
+    Address AddressFrom;
+    vector<Address> AddressTo;
+    string path;
+    string mbox;
     
     
 public:
     CClientProcessor(int clientS);
     int Response(int type);
     int ProcessMessage(char *clientMessage, int read_size);
-    bool NewMessage();
+    string NewFileName(string directory);
 };
 
 enum states{

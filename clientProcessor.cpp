@@ -8,11 +8,12 @@
 
 using namespace std;
 
-//TODO mailbox
-
 CClientProcessor::CClientProcessor(int clientS) {
     clientSock = clientS;
     state = STATE_INIT;
+    rcptCount = 0;
+    path = "./";
+    mbox = "/mbox/";
 }
 
 int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
@@ -49,7 +50,7 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
         responseType = 221;
 
     }
-    
+
     return Response(responseType);
 }
 
@@ -87,77 +88,174 @@ int CClientProcessor::Response(int type) {
     return 0;
 }
 
+string extractAddress(string message) {
+    string addr = "";
+
+    size_t pos1 = message.find("<");
+    size_t pos2 = message.find(">");
+
+    addr = message.substr(0, pos2);
+    addr.erase(0, pos1 + 1);
+
+    return addr;
+}
+
+string extractUser(string addr) {
+    string usr = "";
+
+    size_t pos = addr.find("@");
+
+    usr = addr.substr(0, pos);
+
+    return usr;
+}
+
+string extractDomain(string addr) {
+    string dom = "";
+
+    size_t pos = addr.find("@");
+
+    dom = addr.erase(0, pos + 1);
+
+    return dom;
+}
+
 int CClientProcessor::Helo(char* clientMessage, int read_size) {
+
+    cout << "Received HELO" << endl;
 
     state = STATE_HELO;
 
     rcptCount = 0;
 
-    NewMessage();
+    msgFileName = NewFileName(path);
 
     return 250;
 }
 
 int CClientProcessor::Mail(char* clientMessage, int read_size) {
 
-    //TODO implementation
-    return 502;
+    cout << "Received MAIL" << endl;
+
+    if (state != STATE_HELO)
+        return Response(503);
+
+    string fromAddress;
+    fromAddress = extractAddress(string(clientMessage));
+
+    if (!Address::ValidateAddress(fromAddress))
+        return 501;
+
+    cout << "Sender: " << fromAddress << endl;
+
+    AddressFrom.SetAddress(fromAddress);
+
+    return 250;
 }
 
 int CClientProcessor::Rcpt(char* clientMessage, int read_size) {
 
+    cout << "Received RCPT" << endl;
+
     if (state != STATE_HELO)
         return Response(503);
-    
+
     if (rcptCount > MAX_RCPT_COUNT)
         return Response(552);
-    
+
     string toAddress;
     string toDomain;
     string toUser;
-    string clientMes = string(clientMessage);
-    
-    size_t pos1 = clientMes.find("<");
-    size_t pos2 = clientMes.find(">");
-           
-    toAddress = clientMes.substr(pos1+1, pos2-2);
-    cout << pos1 << " " << pos2 << " " << toAddress << endl;
-    
+    toAddress = extractAddress(string(clientMessage));
+
+    cout << toAddress << endl;
+
+    if (!Address::ValidateAddress(toAddress))
+        return 501;
+
+    toUser = extractUser(toAddress);
+    toDomain = extractDomain(toAddress);
+
+    cout << "Recipient: " << toUser << "@" << toDomain << endl;
+
+    struct stat sb;
+
+    if (!(stat((path + toDomain).c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))) {
+        cout << "Recipient not local" << endl;
+        return 551;
+    }
+
+    if (!(stat((path + toDomain + "/" + toUser).c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))) {
+        cout << "Recipient not found on this domain" << endl;
+        return 550;
+    }
+
+    AddressTo.push_back(Address());
+    AddressTo.at(rcptCount).SetAddress(toAddress);
+    rcptCount++;
+
     return 250;
 }
 
 int CClientProcessor::Data(char* clientMessage, int read_size) {
 
-    //TODO implementation
-    return 502;
+    cout << "Received DATA" << endl;
+
+    if (state != STATE_DATA) {
+        state = STATE_DATA;
+        return 354;
+    }
+
+    cout << "Receiving data..." << endl;
+
+    if (string(clientMessage).find("koniec") != string::npos) //\r\n.\r\n
+    {
+        state = STATE_HELO;
+        msgFile.close();
+        for (int i = 0; i < rcptCount; i++) {
+            cout << "Sending to " << AddressTo.at(i).GetUser() << "@" << AddressTo.at(i).GetDomain() << endl;
+            //TODO copy to user folder
+        }
+
+        //remove(msgFileName.c_str());
+        //msgFileName = "";
+
+        return 250;
+    }
+
+    if (!msgFile.is_open())
+        msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app);
+
+    string messageText = clientMessage;
+    messageText.erase(0,4);
+    msgFile << string(messageText);
+
+    return 220;
 }
 
-bool CClientProcessor::NewMessage() {
+string CClientProcessor::NewFileName(string directory) {
 
     int i = 0;
 
     struct stat buf;
-    msgFileName = "msg0.txt";
+    string newFileName = directory + "msg0.txt";
 
-    if (stat(msgFileName.c_str(), &buf) == -1) {
-        msgFile.open(msgFileName.c_str());
-    }
-    else {
-        while (stat(msgFileName.c_str(), &buf) > -1) {
+    if (stat(newFileName.c_str(), &buf) == -1) {
+        return newFileName;
+    } else {
+        while (stat(newFileName.c_str(), &buf) > -1) {
 
             i++;
 
             stringstream ss;
             ss << i;
 
-            msgFileName = string("msg") + ss.str() + ".txt";
+            newFileName = string("msg") + ss.str() + ".txt";
         }
 
-        msgFile.open(msgFileName.c_str());
+
     }
 
-    if (msgFile.is_open())
-        return true;
-
-    return false;
+    return newFileName;
 }
+

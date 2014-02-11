@@ -8,16 +8,6 @@ Address::Address(){
     domain = "";
 }
 
-static bool ValidateAddress(string addr){
-        
-    if ((addr.length() > 2) && 
-            (addr.find("@") != string::npos) &&
-            addr.find("@") > 1)
-        return true;
-        
-    return false;
-    
-}
 
 bool Address::SetAddress(string addr){
     
