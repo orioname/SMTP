@@ -20,6 +20,8 @@
 
 #define SMTP_PORT 2500
 #define MAX_RCPT_COUNT 100
+#define MESSAGE_LENGTH 2050
+#define RESPONSE_LENGTH 100
 
 #endif	/* GLOBAL_H */
 

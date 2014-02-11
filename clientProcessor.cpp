@@ -56,13 +56,15 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
     }
 
-    *clientMessage = 0;
+    for (unsigned int i = 0; i < MESSAGE_LENGTH; i++)
+        clientMessage[i] = 0;
+
     return Response(responseType);
 }
 
 int CClientProcessor::Response(int type) {
 
-    char serverMessage[100];
+    char serverMessage[RESPONSE_LENGTH];
     int write_size;
 
     if (type == 220)
@@ -90,6 +92,9 @@ int CClientProcessor::Response(int type) {
     write_size = (int) strlen(serverMessage);
 
     write(clientSock, serverMessage, write_size);
+    
+    for (unsigned int i = 0; i < RESPONSE_LENGTH; i++)
+        serverMessage[i] = 0;
 
     return 0;
 }
@@ -148,7 +153,7 @@ int CClientProcessor::Mail(char* clientMessage, int read_size) {
 
     string fromAddress;
     fromAddress = extractAddress(string(clientMessage));
-   
+
     if (!Address::ValidateAddress(fromAddress))
         return 501;
 
@@ -235,6 +240,7 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
             msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
         msgFile << string("From: ") + AddressFrom.GetAddress() + string("\r\n");
         msgFile << string("Date: ") + currentDateTime() + string("\r\n");
+        *clientMessage = 0;
         return 354;
     }
 
@@ -274,7 +280,7 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
         msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
 
     string messageText = clientMessage;
-    messageText.erase(0, 4);
+    messageText.erase(0, 5);
     msgFile << string(messageText);
 
     return 220;
