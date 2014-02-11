@@ -49,7 +49,9 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
     } else if (strcasecmp(command, "RSET") == 0) {
 
         responseType = Rset(clientMessage, read_size);
+    } else if (strcasecmp(command, "INIT") == 0) {
 
+        responseType = Init(clientMessage, read_size);
     } else if (strcasecmp(command, "QUIT") == 0) {
 
         responseType = 221;
@@ -92,7 +94,7 @@ int CClientProcessor::Response(int type) {
     write_size = (int) strlen(serverMessage);
 
     write(clientSock, serverMessage, write_size);
-    
+
     for (unsigned int i = 0; i < RESPONSE_LENGTH; i++)
         serverMessage[i] = 0;
 
@@ -129,6 +131,10 @@ string extractDomain(string addr) {
     dom = addr.erase(0, pos + 1);
 
     return dom;
+}
+
+int CClientProcessor::Init(char* clientMessage, int read_size) {
+    return 220;
 }
 
 int CClientProcessor::Helo(char* clientMessage, int read_size) {
@@ -236,11 +242,24 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
     if (state != STATE_DATA) {
         state = STATE_DATA;
 
+        /* Headers */
         if (!msgFile.is_open())
             msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
-        msgFile << string("From: ") + AddressFrom.GetAddress() + string("\r\n");
-        msgFile << string("Date: ") + currentDateTime() + string("\r\n");
-        *clientMessage = 0;
+
+        msgFile << string("From:\r\n") + AddressFrom.GetAddress() + string("\r\n");
+        msgFile << string("To:\r\n");
+        string rcpts = "";
+        for (unsigned int i = 0; i < AddressTo.size(); i++) {
+            if (i == 0) {
+                rcpts = AddressTo.at(0).GetAddress();
+            } else {
+                rcpts += string("; ") + AddressTo.at(i).GetAddress();
+            }
+        }
+        msgFile << rcpts << string("\r\n") << endl;
+        msgFile << string("Date:\r\n") + currentDateTime() + string("\r\n");
+        msgFile << string("Subject: \r\n");
+
         return 354;
     }
 
@@ -254,6 +273,8 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
             cout << "Sending to " << AddressTo.at(i).GetUser() << "@" << AddressTo.at(i).GetDomain() << endl;
             string userFileName = NewFileName(string("./") + AddressTo.at(i).GetDomain() + string("/") + AddressTo.at(i).GetUser() + mbox);
 
+            if (!msgFile.is_open())
+                msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
             ofstream userFile(userFileName.c_str(), fstream::trunc | fstream::binary);
 
             msgFile.seekg(0, ios::end);
@@ -266,8 +287,8 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
             userFile.write(buffer, size);
 
             delete[] buffer;
-            msgFile.close();
             userFile.close();
+            msgFile.close();
         }
 
         remove(msgFileName.c_str());
@@ -283,7 +304,7 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
     messageText.erase(0, 5);
     msgFile << string(messageText);
 
-    return 220;
+    return 250;
 }
 
 string CClientProcessor::NewFileName(string directory) {

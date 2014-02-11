@@ -11,6 +11,10 @@ void *processClient(void *sockdClient) {
     int read_size;
     CClientProcessor cp(sock);
 
+    char init[5] = "INIT";
+    
+    //cp.ProcessMessage(init, 0);
+    
     while ((read_size = recv(sock, client_message, sizeof (client_message), 0))) {
         
         if (cp.ProcessMessage(client_message, read_size) == -1) {

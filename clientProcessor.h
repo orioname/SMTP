@@ -25,6 +25,7 @@ private:
     int Rcpt(char *clientMessage, int read_size);
     int Data(char *clientMessage, int read_size);
     int Rset(char *clientMessage, int read_size);
+    int Init(char *clientMessage, int read_size);
     int state;
     string msgFileName;
     fstream msgFile;
