@@ -11,12 +11,16 @@ void *processClient(void *sockdClient) {
     int read_size;
     CClientProcessor cp(sock);
 
-    char init[5] = "INIT";
-    
-    //cp.ProcessMessage(init, 0);
-    
+    char* serverMessage = new char();
+    strcpy(serverMessage, "220 Welcome to electronic mail system \r\n");
+
+    int write_size = (int) strlen(serverMessage);
+
+    write(sock, serverMessage, write_size);
+
+
     while ((read_size = recv(sock, client_message, sizeof (client_message), 0))) {
-        
+
         if (cp.ProcessMessage(client_message, read_size) == -1) {
             printf("Connection thread closing\n");
             break;
