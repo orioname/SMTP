@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <sys/stat.h>
+#include <iterator>
 
 using namespace std;
 
@@ -45,12 +46,17 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
         responseType = Data(clientMessage, read_size);
 
+    } else if (strcasecmp(command, "RSET") == 0) {
+
+        responseType = Rset(clientMessage, read_size);
+
     } else if (strcasecmp(command, "QUIT") == 0) {
 
         responseType = 221;
 
     }
 
+    *clientMessage = 0;
     return Response(responseType);
 }
 
@@ -142,7 +148,7 @@ int CClientProcessor::Mail(char* clientMessage, int read_size) {
 
     string fromAddress;
     fromAddress = extractAddress(string(clientMessage));
-
+   
     if (!Address::ValidateAddress(fromAddress))
         return 501;
 
@@ -167,8 +173,6 @@ int CClientProcessor::Rcpt(char* clientMessage, int read_size) {
     string toDomain;
     string toUser;
     toAddress = extractAddress(string(clientMessage));
-
-    cout << toAddress << endl;
 
     if (!Address::ValidateAddress(toAddress))
         return 501;
@@ -197,12 +201,40 @@ int CClientProcessor::Rcpt(char* clientMessage, int read_size) {
     return 250;
 }
 
+int CClientProcessor::Rset(char* clientMessage, int read_size) {
+
+    cout << "Received RSET" << endl;
+
+    state = STATE_HELO;
+    rcptCount = 0;
+
+    remove(msgFileName.c_str());
+    msgFileName = "";
+
+    return 220;
+}
+
+const std::string currentDateTime() {
+    time_t now = time(0);
+    struct tm tstruct;
+    char buf[80];
+    tstruct = *localtime(&now);
+    strftime(buf, sizeof (buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+
 int CClientProcessor::Data(char* clientMessage, int read_size) {
 
     cout << "Received DATA" << endl;
 
     if (state != STATE_DATA) {
         state = STATE_DATA;
+
+        if (!msgFile.is_open())
+            msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
+        msgFile << string("From: ") + AddressFrom.GetAddress() + string("\r\n");
+        msgFile << string("Date: ") + currentDateTime() + string("\r\n");
         return 354;
     }
 
@@ -211,23 +243,38 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
     if (string(clientMessage).find("koniec") != string::npos) //\r\n.\r\n
     {
         state = STATE_HELO;
-        msgFile.close();
+
         for (int i = 0; i < rcptCount; i++) {
             cout << "Sending to " << AddressTo.at(i).GetUser() << "@" << AddressTo.at(i).GetDomain() << endl;
-            //TODO copy to user folder
+            string userFileName = NewFileName(string("./") + AddressTo.at(i).GetDomain() + string("/") + AddressTo.at(i).GetUser() + mbox);
+
+            ofstream userFile(userFileName.c_str(), fstream::trunc | fstream::binary);
+
+            msgFile.seekg(0, ios::end);
+            ifstream::pos_type size = msgFile.tellg();
+            msgFile.seekg(0);
+
+            char* buffer = new char[size];
+
+            msgFile.read(buffer, size);
+            userFile.write(buffer, size);
+
+            delete[] buffer;
+            msgFile.close();
+            userFile.close();
         }
 
-        //remove(msgFileName.c_str());
-        //msgFileName = "";
+        remove(msgFileName.c_str());
+        msgFileName = "";
 
         return 250;
     }
 
     if (!msgFile.is_open())
-        msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app);
+        msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
 
     string messageText = clientMessage;
-    messageText.erase(0,4);
+    messageText.erase(0, 4);
     msgFile << string(messageText);
 
     return 220;
@@ -235,10 +282,10 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
 
 string CClientProcessor::NewFileName(string directory) {
 
-    int i = 0;
+    int i = 1;
 
     struct stat buf;
-    string newFileName = directory + "msg0.txt";
+    string newFileName = directory + "1";
 
     if (stat(newFileName.c_str(), &buf) == -1) {
         return newFileName;
@@ -250,7 +297,7 @@ string CClientProcessor::NewFileName(string directory) {
             stringstream ss;
             ss << i;
 
-            newFileName = string("msg") + ss.str() + ".txt";
+            newFileName = directory + ss.str();
         }
 
 
@@ -258,4 +305,6 @@ string CClientProcessor::NewFileName(string directory) {
 
     return newFileName;
 }
+
+
 

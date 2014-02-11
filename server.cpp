@@ -19,13 +19,13 @@ void *processClient(void *sockdClient)
         	if(cp.ProcessMessage(client_message, read_size) == -1)
 		{
 			printf("Connection thread closing\n");
-                        free(sockdClient);
-			exit(0);
+                        break;
 		}
+                
     }
          
     free(sockdClient);
-    exit(-1);
+    return 0;
 }
 
 int CServer::acceptCon(){
@@ -47,7 +47,7 @@ int CServer::acceptCon(){
             return 1;
         }
          
-        pthread_join( threadID , NULL);
+        //pthread_join( threadID , NULL);
           
     }
     

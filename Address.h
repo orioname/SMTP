@@ -30,7 +30,7 @@ public:
     bool SetAddress(string addr);
     static bool ValidateAddress(string addr) {return ((addr.length() > 2) && 
             (addr.find("@") != string::npos) &&
-            addr.find("@") > 1);};
+            addr.find("@") > 0);};
 };
 
 #endif	/* ADDRESS_H */
