@@ -21,6 +21,8 @@ int CClientProcessor::ProcessMessage(char* clientMessage, int read_size) {
 
     int responseType = 502; // command not implemented
 
+    cout << "client message: " << clientMessage << endl;
+
     char command[5] = "comm";
 
     if (read_size >= 4)
@@ -147,6 +149,8 @@ int CClientProcessor::Helo(char* clientMessage, int read_size) {
 
     msgFileName = NewFileName(path);
 
+    cout << "Received HELO end" << endl;
+
     return 250;
 }
 
@@ -260,13 +264,23 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
         msgFile << string("Date:\r\n") + currentDateTime() + string("\r\n");
         msgFile << string("Subject: \r\n");
 
+        cout << "sending 354" << endl;
+        
         return 354;
     }
 
     cout << "Receiving data..." << endl;
 
-    if (string(clientMessage).find("koniec") != string::npos) //\r\n.\r\n
+    if (!msgFile.is_open())
+        msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
+
+    string messageText = clientMessage;
+    messageText.erase(0, 5);
+    msgFile << string(messageText);
+
+    if (string(clientMessage).find(".") != string::npos) //\r\n.\r\n
     {
+        cout << "end of message found" << endl;
         state = STATE_HELO;
 
         for (int i = 0; i < rcptCount; i++) {
@@ -296,13 +310,13 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
 
         return 250;
     }
+    /*
+        if (!msgFile.is_open())
+            msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
 
-    if (!msgFile.is_open())
-        msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
-
-    string messageText = clientMessage;
-    messageText.erase(0, 5);
-    msgFile << string(messageText);
+        string messageText = clientMessage;
+        messageText.erase(0, 5);
+        msgFile << string(messageText); */
 
     return 250;
 }

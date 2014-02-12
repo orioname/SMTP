@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include<string.h>    
 #include<stdlib.h> 
+#include<string>
+
+using namespace std;
 
 void *processClient(void *sockdClient) {
     int sock = *(int*) sockdClient;
@@ -11,12 +14,11 @@ void *processClient(void *sockdClient) {
     int read_size;
     CClientProcessor cp(sock);
 
-    char* serverMessage = new char();
-    strcpy(serverMessage, "220 Welcome to electronic mail system \r\n");
+    string serverMessage = "220 Welcome to electronic mail system \r\n";
 
-    int write_size = (int) strlen(serverMessage);
+    int write_size = (int) strlen(serverMessage.c_str());
 
-    write(sock, serverMessage, write_size);
+    write(sock, serverMessage.c_str(), write_size);
 
 
     while ((read_size = recv(sock, client_message, sizeof (client_message), 0))) {
@@ -41,7 +43,7 @@ int CServer::acceptCon() {
     while ((sockdClient = accept(sockd, (struct sockaddr*) &peer_name, &addrlen))) {
 
         pthread_t threadID;
-        sockClientNew = (int *) malloc(1);
+        sockClientNew = (int*)malloc(sizeof(int));
         *sockClientNew = sockdClient;
 
         if (pthread_create(&threadID, NULL, processClient, (void*) sockClientNew) < 0) {
