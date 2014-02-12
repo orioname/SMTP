@@ -149,8 +149,6 @@ int CClientProcessor::Helo(char* clientMessage, int read_size) {
 
     msgFileName = NewFileName(path);
 
-    cout << "Received HELO end" << endl;
-
     return 250;
 }
 
@@ -281,7 +279,6 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
 
     if (string(clientMessage).find("\r\n. \r\n") != string::npos) //\r\n.\r\n
     {
-        cout << "end of message found" << endl;
         state = STATE_HELO;
 
         for (int i = 0; i < rcptCount; i++) {
@@ -311,13 +308,6 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
 
         return 250;
     }
-    /*
-        if (!msgFile.is_open())
-            msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
-
-        string messageText = clientMessage;
-        messageText.erase(0, 5);
-        msgFile << string(messageText); */
 
     return 250;
 }
