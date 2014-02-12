@@ -250,8 +250,8 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
         if (!msgFile.is_open())
             msgFile.open(msgFileName.c_str(), fstream::in | fstream::out | fstream::app | fstream::binary);
 
-        msgFile << string("From:\r\n") + AddressFrom.GetAddress() + string("\r\n");
-        msgFile << string("To:\r\n");
+        msgFile << string("From: ") + AddressFrom.GetAddress() + string("\r\n");
+        msgFile << string("To: ");
         string rcpts = "";
         for (unsigned int i = 0; i < AddressTo.size(); i++) {
             if (i == 0) {
@@ -260,9 +260,10 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
                 rcpts += string("; ") + AddressTo.at(i).GetAddress();
             }
         }
-        msgFile << rcpts << string("\r\n") << endl;
-        msgFile << string("Date:\r\n") + currentDateTime() + string("\r\n");
-        msgFile << string("Subject: \r\n");
+        //msgFile << rcpts << string("\r\n") << endl;
+        msgFile << rcpts << endl;
+        msgFile << string("Date: ") + currentDateTime() + string("\r\n");
+        msgFile << string("Subject: ");
 
         cout << "sending 354" << endl;
         
@@ -278,7 +279,7 @@ int CClientProcessor::Data(char* clientMessage, int read_size) {
     messageText.erase(0, 5);
     msgFile << string(messageText);
 
-    if (string(clientMessage).find(".") != string::npos) //\r\n.\r\n
+    if (string(clientMessage).find("\r\n. \r\n") != string::npos) //\r\n.\r\n
     {
         cout << "end of message found" << endl;
         state = STATE_HELO;
